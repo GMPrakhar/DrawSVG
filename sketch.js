@@ -1,5 +1,5 @@
-let points = [];
-let figureComplete = false; // If the figure is ready for fill or not
+let figures = [];           // Array of Different Figures
+let currentFigure = new Figure({type: "polygon", figureComplete: false, fill: 175, points: []});  //Default Figure to be drawn is polygon
 let captureRange = 20;      // Distance upto which mouse Click will be captured
 let svg;                    // Obkect of class SVG to generate the final output
 let canvasStart = 300;      // Signifying the starting X coordinate of Canvas
@@ -22,6 +22,7 @@ font-size: 15px;
 
 let ext;
 function setup(){
+  figures.push(currentFigure);
   let canvas = createCanvas(windowWidth-canvasStart, windowHeight);
   canvas.position(canvasStart, 0);
   svg = new SVG();
@@ -54,60 +55,61 @@ function draw(){
 
 
   // If figure is Complete, then fill the colour in the polygon
-  if(figureComplete){
-    beginShape();
-    for(let i = 0; i < points.length; i++){
-      if(i!= points.length-1){
-        vertex(points[i].x, points[i].y);
-        vertex(points[(i+1)].x, points[(i+1)].y );
+  for(let n = 0; n < figures.length; n++){
+
+    if(figures[n].figureComplete){
+      beginShape();
+      for(let i = 0; i < figures[n].points.length; i++){
+        if(i!= figures[n].points.length-1){
+          vertex(figures[n].points[i].x, figures[n].points[i].y);
+          vertex(figures[n].points[(i+1)].x, figures[n].points[(i+1)].y );
+        }
       }
-    }
-    endShape();
-  }else {
+      endShape();
+    }else {
 
-    // else if figure is not complete, then just draw the line
-    // between the clicked vertices
-    for(let i = 0; i < points.length; i++){
-      if(i!= points.length-1){
-        line(points[i].x, points[i].y,points[(i+1)].x, points[(i+1)].y );
-      }else if(points.length > 2){
+      // else if figure is not complete, then just draw the line
+      // between the clicked vertices
+      for(let i = 0; i < figures[n].points.length; i++){
+        if(i!= figures[n].points.length-1){
+          line(figures[n].points[i].x, figures[n].points[i].y,figures[n].points[(i+1)].x, figures[n].points[(i+1)].y );
+        }else if(figures[n].points.length > 2){
 
-        // If last point's location equals that of the first points,
-        // then the figure is complete
-        if(points[i].x == points[0].x && points[i].y == points[0].y){
-          figureComplete = true;
+          // If last point's location equals that of the first figures[n].points,
+          // then the figure is complete
+          if(figures[n].points[i].x == figures[n].points[0].x && figures[n].points[i].y == figures[n].points[0].y){
+            figures[n].figureComplete = true;
+          }
         }
       }
     }
-  }
 
+    // If User is near the first pixel, Capture the mouse even if
+    // mouse position is not exactly equal to first pixel position
 
-  // If User is near the first pixel, Capture the mouse even if
-  // mouse position is not exactly equal to first pixel position
-  if(points.length > 2){
-    if(abs(mouseX-points[0].x) < 30 && abs(mouseY-points[0].y) < captureRange){
-      fill(183, 123, 58);
-      ellipse(points[0].x, points[0].y, captureRange, captureRange);
-      fill(0);
-      ellipse(points[0].x, points[0].y, captureRange/2, captureRange/2);
+    if(figures[n].points.length > 2 && !figures[n].figureComplete){
+      if(abs(mouseX-figures[n].points[0].x) < 30 && abs(mouseY-figures[n].points[0].y) < captureRange){
+        fill(183, 123, 58);
+        ellipse(figures[n].points[0].x, figures[n].points[0].y, captureRange, captureRange);
+        fill(0);
+        ellipse(figures[n].points[0].x, figures[n].points[0].y, captureRange/2, captureRange/2);
+      }
     }
   }
-
-
 }
 
 function mouseClicked(){
   if(mouseX>0){
-    if(points.length > 2){
+    if(currentFigure.points.length > 2){
 
       // Capture the end point to first vertex if mouse is clicked inside the captue Range
-      if(abs(mouseX-points[0].x) < 30 && abs(mouseY-points[0].y) < captureRange){
-        points.push(createVector(points[0].x, points[0].y));
-      }else{
-        points.push(createVector(mouseX, mouseY));
+      if(abs(mouseX-currentFigure.points[0].x) < 30 && abs(mouseY-currentFigure.points[0].y) < captureRange){
+        currentFigure.points.push(createVector(currentFigure.points[0].x, currentFigure.points[0].y));
+      }else if(!currentFigure.figureComplete){
+        currentFigure.points.push(createVector(mouseX, mouseY));
       }
-    }else {
-      points.push(createVector(mouseX, mouseY));
+    }else if(!currentFigure.figureComplete){
+      currentFigure.points.push(createVector(mouseX, mouseY));
     }
     maxX = max(maxX, mouseX);
     maxY = max(maxY, mouseY);
@@ -116,7 +118,7 @@ function mouseClicked(){
 
 
 function generateSVG(){
-  svg.generate(points, maxX, maxY);
+  svg.generatePolygon(currentFigure.points, maxX, maxY);
 }
 
 function changeExportType(){

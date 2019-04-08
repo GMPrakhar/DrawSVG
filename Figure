@@ -1,0 +1,6 @@
+class Figure{
+
+  constructor(args){
+    
+  }
+}
