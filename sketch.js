@@ -1,9 +1,11 @@
 let figures = [];           // Array of Different Figures
-let currentFigure = new Figure({type: "polygon", figureComplete: false, fill: 175, points: []});  //Default Figure to be drawn is polygon
+let currentFigure = new Figure({type: "polygon", figureComplete: false, fill: 175, points: [], translate: [0,0], bounds: [1000,1000,0,0]});  //Default Figure to be drawn is polygon
 let captureRange = 20;      // Distance upto which mouse Click will be captured
 let svg;                    // Obkect of class SVG to generate the final output
 let canvasStart = 300;      // Signifying the starting X coordinate of Canvas
 let maxX, maxY;             // Maximum X and Y for size of SVG
+let movingFigure;           // Current Figure which is being moved
+let dragging = false;
 let generateButtonStyle = `
 display: block;
 background: #f44336;
@@ -27,6 +29,14 @@ function setup(){
   canvas.position(canvasStart, 0);
   svg = new SVG();
   // ------------------- CODE FOR HTML ELEMENTS ---------------------
+
+
+  // Dragging Figure option
+
+    let draggable = createButton('Toggle Dragging');
+    draggable.position(100, 30);
+    draggable.style("padding: 10px;");
+    draggable.mousePressed(startDragging);
 
   //Export As Option Field
   ext = createSelect();
@@ -58,6 +68,9 @@ function draw(){
   for(let n = 0; n < figures.length; n++){
 
     if(figures[n].figureComplete){
+      push();
+      //translate if user is dragging the figure with the mouse
+      translate(figures[n].translate[0], figures[n].translate[1]);
       beginShape();
       for(let i = 0; i < figures[n].points.length; i++){
         if(i!= figures[n].points.length-1){
@@ -66,6 +79,7 @@ function draw(){
         }
       }
       endShape();
+      pop();
     }else {
 
       // else if figure is not complete, then just draw the line
@@ -79,6 +93,8 @@ function draw(){
           // then the figure is complete
           if(figures[n].points[i].x == figures[n].points[0].x && figures[n].points[i].y == figures[n].points[0].y){
             figures[n].figureComplete = true;
+            currentFigure = new Figure({type: "polygon", figureComplete: false, fill: 175, points: [], translate: [0,0], bounds: [1000,1000,0,0]});
+            figures.push(currentFigure);
           }
         }
       }
@@ -99,7 +115,7 @@ function draw(){
 }
 
 function mouseClicked(){
-  if(mouseX>0){
+  if(mouseX>0 && !dragging){
     if(currentFigure.points.length > 2){
 
       // Capture the end point to first vertex if mouse is clicked inside the captue Range
@@ -113,8 +129,35 @@ function mouseClicked(){
     }
     maxX = max(maxX, mouseX);
     maxY = max(maxY, mouseY);
+    currentFigure.bounds[0] = min(currentFigure.bounds[0], mouseX);
+    currentFigure.bounds[1] = min(currentFigure.bounds[1], mouseY);
+    currentFigure.bounds[2] = max(currentFigure.bounds[2], mouseX);
+    currentFigure.bounds[3] = max(currentFigure.bounds[3], mouseY);
+
+  }
+
+  for(let i = 0; i < figures.length; i++){
+    let fig = figures[i] ;
+    let bounds = fig.bounds;
+    if(fig.figureComplete){
+      console.log(fig.bounds);
+      if(mouseX>=bounds[0] && mouseX<=bounds[2] && mouseY>=bounds[1] && mouseY<=bounds[3]){
+        console.log(fig.type + "Selected");
+        movingFigure = fig;
+      }
+    }
   }
 }
+
+function mouseDragged(){
+
+  let bounds = movingFigure.bounds;
+  if(dragging && movingFigure && mouseX>=movingFigure.translate[0]+ bounds[0] && mouseX<=movingFigure.translate[0]+bounds[2] && mouseY>=movingFigure.translate[1]+bounds[1] && mouseY<=movingFigure.translate[1]+bounds[3]){
+    movingFigure.translate[0] = mouseX - (bounds[0]+bounds[2])/2;
+    movingFigure.translate[1] = mouseY - (bounds[1]+bounds[3])/2;
+  }
+}
+
 
 
 function generateSVG(){
@@ -123,4 +166,8 @@ function generateSVG(){
 
 function changeExportType(){
   svg.setExportType(ext.value());
+}
+
+function startDragging(){
+  dragging = !dragging;
 }
