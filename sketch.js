@@ -130,6 +130,7 @@ function draw(){
 }
 
 function mouseClicked(){
+
   let points = currentFigure.points;
   let translates = currentFigure.translate;
   if(mouseX>0 && !dragging){
@@ -168,14 +169,40 @@ function mouseClicked(){
 }
 
 function mouseDragged(){
-
-  let bounds = movingFigure.bounds;
+  let bounds;
+  if(movingFigure!=null) bounds = movingFigure.bounds;
+  let points = currentFigure.points;
+  let translates = currentFigure.translate;
   if(dragging && movingFigure && mouseX>=movingFigure.translate[0]+ bounds[0] && mouseX<=movingFigure.translate[0]+bounds[2] && mouseY>=movingFigure.translate[1]+bounds[1] && mouseY<=movingFigure.translate[1]+bounds[3]){
     movingFigure.translate[0] = mouseX - (bounds[0]+bounds[2])/2;
     movingFigure.translate[1] = mouseY - (bounds[1]+bounds[3])/2;
+  }else if(!dragging){
+    //console.log(points);
+    if(points.length >= 1){
+
+      // Capture the end point to first vertex if mouse is clicked inside the captue Range
+      if(!points.length == 1 && abs(mouseX-points[0].x-translates[0]) < captureRange && abs(mouseY-points[0].y-translates[1]) < captureRange){
+        points.push(createVector(points[0].x, points[0].y));
+      }else if(!currentFigure.figureComplete){
+        points.push(createVector(mouseX-translates[0], mouseY-translates[1]));
+      }
+    }
+    maxX = max(maxX, mouseX);
+    maxY = max(maxY, mouseY);
+    currentFigure.bounds[0] = min(currentFigure.bounds[0], mouseX);
+    currentFigure.bounds[1] = min(currentFigure.bounds[1], mouseY);
+    currentFigure.bounds[2] = max(currentFigure.bounds[2], mouseX);
+    currentFigure.bounds[3] = max(currentFigure.bounds[3], mouseY);
+
   }
 }
 
+function mousePressed(){
+  //console.log('pressed');
+  if(currentFigure.points.length == 0){
+    currentFigure.points.push(createVector(mouseX, mouseY));
+  }
+}
 
 
 function generateSVG(){
