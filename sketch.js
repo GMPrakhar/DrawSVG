@@ -32,11 +32,10 @@ function setup(){
 
 
   // Dragging Figure option
-
-    let draggable = createButton('Toggle Dragging');
-    draggable.position(100, 30);
-    draggable.style("padding: 10px;");
-    draggable.mousePressed(startDragging);
+  let draggable = createButton('Toggle Dragging');
+  draggable.position(100, 30);
+  draggable.style("padding: 10px;");
+  draggable.mousePressed(startDragging);
 
   //Export As Option Field
   ext = createSelect();
@@ -61,16 +60,28 @@ function setup(){
 
 function draw(){
   background(255);
-  fill(175);
 
 
   // If figure is Complete, then fill the colour in the polygon
   for(let n = 0; n < figures.length; n++){
 
+    let points = figures[n].points;
+    let translates = figures[n].translate;
+    if(figures[n]==movingFigure){
+
+      // Draw a bound around the figure which is currently selected
+      let bounds = movingFigure.bounds;
+      let translates = movingFigure.translate;
+      stroke(255,0,0);
+      fill(255,255,255,0);
+      rect(translates[0]+bounds[0], translates[1]+bounds[1], bounds[2]-bounds[0], bounds[3]-bounds[1]);
+    }
+    stroke(0);
     if(figures[n].figureComplete){
       push();
       //translate if user is dragging the figure with the mouse
       translate(figures[n].translate[0], figures[n].translate[1]);
+      fill(figures[n].fill)
       beginShape();
       for(let i = 0; i < figures[n].points.length; i++){
         if(i!= figures[n].points.length-1){
@@ -84,14 +95,18 @@ function draw(){
 
       // else if figure is not complete, then just draw the line
       // between the clicked vertices
-      for(let i = 0; i < figures[n].points.length; i++){
-        if(i!= figures[n].points.length-1){
-          line(figures[n].points[i].x, figures[n].points[i].y,figures[n].points[(i+1)].x, figures[n].points[(i+1)].y );
-        }else if(figures[n].points.length > 2){
+      for(let i = 0; i < points.length; i++){
+        if(i!= points.length-1){
+          push();
+          //translate if user is dragging the figure with the mouse
+          translate(figures[n].translate[0], figures[n].translate[1]);
+          line(points[i].x, points[i].y,points[(i+1)].x, points[(i+1)].y );
+          pop();
+        }else if(points.length > 2){
 
-          // If last point's location equals that of the first figures[n].points,
+          // If last point's location equals that of the first points,
           // then the figure is complete
-          if(figures[n].points[i].x == figures[n].points[0].x && figures[n].points[i].y == figures[n].points[0].y){
+          if(points[i].x == points[0].x && points[i].y == points[0].y){
             figures[n].figureComplete = true;
             currentFigure = new Figure({type: "polygon", figureComplete: false, fill: 175, points: [], translate: [0,0], bounds: [1000,1000,0,0]});
             figures.push(currentFigure);
@@ -103,29 +118,31 @@ function draw(){
     // If User is near the first pixel, Capture the mouse even if
     // mouse position is not exactly equal to first pixel position
 
-    if(figures[n].points.length > 2 && !figures[n].figureComplete){
-      if(abs(mouseX-figures[n].points[0].x) < 30 && abs(mouseY-figures[n].points[0].y) < captureRange){
+    if(points.length > 2 && !figures[n].figureComplete){
+      if(abs(mouseX-points[0].x-translates[0]) < captureRange && abs(mouseY-points[0].y-translates[1]) < captureRange){
         fill(183, 123, 58);
-        ellipse(figures[n].points[0].x, figures[n].points[0].y, captureRange, captureRange);
+        ellipse(points[0].x+translates[0], points[0].y+translates[1], captureRange, captureRange);
         fill(0);
-        ellipse(figures[n].points[0].x, figures[n].points[0].y, captureRange/2, captureRange/2);
+        ellipse(points[0].x+translates[0], points[0].y+translates[1], captureRange/2, captureRange/2);
       }
     }
   }
 }
 
 function mouseClicked(){
+  let points = currentFigure.points;
+  let translates = currentFigure.translate;
   if(mouseX>0 && !dragging){
-    if(currentFigure.points.length > 2){
+    if(points.length > 2){
 
       // Capture the end point to first vertex if mouse is clicked inside the captue Range
-      if(abs(mouseX-currentFigure.points[0].x) < 30 && abs(mouseY-currentFigure.points[0].y) < captureRange){
-        currentFigure.points.push(createVector(currentFigure.points[0].x, currentFigure.points[0].y));
+      if(abs(mouseX-points[0].x-translates[0]) < captureRange && abs(mouseY-points[0].y-translates[1]) < captureRange){
+        points.push(createVector(points[0].x, points[0].y));
       }else if(!currentFigure.figureComplete){
-        currentFigure.points.push(createVector(mouseX, mouseY));
+        points.push(createVector(mouseX-translates[0], mouseY-translates[1]));
       }
     }else if(!currentFigure.figureComplete){
-      currentFigure.points.push(createVector(mouseX, mouseY));
+      points.push(createVector(mouseX, mouseY));
     }
     maxX = max(maxX, mouseX);
     maxY = max(maxY, mouseY);
@@ -139,12 +156,13 @@ function mouseClicked(){
   for(let i = 0; i < figures.length; i++){
     let fig = figures[i] ;
     let bounds = fig.bounds;
-    if(fig.figureComplete){
-      console.log(fig.bounds);
-      if(mouseX>=bounds[0] && mouseX<=bounds[2] && mouseY>=bounds[1] && mouseY<=bounds[3]){
-        console.log(fig.type + "Selected");
-        movingFigure = fig;
-      }
+    let translates = fig.translate;
+    //console.log(fig.bounds);
+    if(dragging && mouseX>=translates[0]+ bounds[0] && mouseX<=translates[0]+bounds[2] && mouseY>=translates[1]+bounds[1] && mouseY<=translates[1]+bounds[3]){
+      //console.log(fig.type + "Selected");
+      movingFigure = fig;
+    }else if(!dragging){
+      movingFigure = null;
     }
   }
 }
