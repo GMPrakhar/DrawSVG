@@ -5,7 +5,9 @@ let svg;                    // Obkect of class SVG to generate the final output
 let canvasStart = 300;      // Signifying the starting X coordinate of Canvas
 let maxX, maxY;             // Maximum X and Y for size of SVG
 let movingFigure;           // Current Figure which is being moved
+let movingFigureIndex;
 let dragging = false;
+let cp;                     // Fill Colour Picker
 let generateButtonStyle = `
 display: block;
 background: #f44336;
@@ -52,6 +54,11 @@ function setup(){
   button.style(generateButtonStyle);
   button.mousePressed(generateSVG);
 
+  // Color Picker For Each Figure
+  cp = createColorPicker(color(175,175,175));
+  cp.position(100, 200);
+  cp.input(pickFillColor);
+
 
 
   //------------------ HTML ELEMENTS CODE END ------------------------
@@ -72,10 +79,12 @@ function draw(){
       // Draw a bound around the figure which is currently selected
       let bounds = movingFigure.bounds;
       let translates = movingFigure.translate;
+      strokeWeight(3);
       stroke(255,0,0);
       fill(255,255,255,0);
       rect(translates[0]+bounds[0], translates[1]+bounds[1], bounds[2]-bounds[0], bounds[3]-bounds[1]);
     }
+    strokeWeight(1);
     stroke(0);
     if(figures[n].figureComplete){
       push();
@@ -158,12 +167,12 @@ function mouseClicked(){
     let fig = figures[i] ;
     let bounds = fig.bounds;
     let translates = fig.translate;
-    //console.log(fig.bounds);
     if(dragging && mouseX>=translates[0]+ bounds[0] && mouseX<=translates[0]+bounds[2] && mouseY>=translates[1]+bounds[1] && mouseY<=translates[1]+bounds[3]){
-      //console.log(fig.type + "Selected");
       movingFigure = fig;
+      movingFigureIndex = i;
     }else if(!dragging){
       movingFigure = null;
+      movingFigureIndex = null;
     }
   }
 }
@@ -177,7 +186,6 @@ function mouseDragged(){
     movingFigure.translate[0] = mouseX - (bounds[0]+bounds[2])/2;
     movingFigure.translate[1] = mouseY - (bounds[1]+bounds[3])/2;
   }else if(!dragging){
-    //console.log(points);
     if(points.length >= 1){
 
       // Capture the end point to first vertex if mouse is clicked inside the captue Range
@@ -187,6 +195,8 @@ function mouseDragged(){
         points.push(createVector(mouseX-translates[0], mouseY-translates[1]));
       }
     }
+
+    //defines the bounds of the figure that is used to drag figure
     maxX = max(maxX, mouseX);
     maxY = max(maxY, mouseY);
     currentFigure.bounds[0] = min(currentFigure.bounds[0], mouseX);
@@ -198,8 +208,8 @@ function mouseDragged(){
 }
 
 function mousePressed(){
-  //console.log('pressed');
-  if(currentFigure.points.length == 0){
+  //Initial Point when free drawing!
+  if(currentFigure.points.length == 0 && mouseX > canvasStart && !dragging){
     currentFigure.points.push(createVector(mouseX, mouseY));
   }
 }
@@ -215,4 +225,20 @@ function changeExportType(){
 
 function startDragging(){
   dragging = !dragging;
+}
+
+function keyPressed(){
+  if(keyCode === DELETE){
+    if(movingFigure){
+      movingFigure = null;
+      figures.splice(movingFigureIndex, 1);
+      movingFigureIndex = null;
+    }
+  }
+}
+
+function pickFillColor(){
+  if(movingFigure){
+    movingFigure.fill = cp.color();
+  }
 }
