@@ -216,7 +216,7 @@ function mousePressed(){
 
 
 function generateSVG(){
-  svg.generatePolygon(currentFigure.points, maxX, maxY);
+  svg.generatePolygon(figures, maxX, maxY);
 }
 
 function changeExportType(){
